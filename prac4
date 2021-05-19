@@ -1,0 +1,326 @@
+Ejercicos de la practica 4
+
+## Target d'arrancada ##
+
+1. En tots els casos verificar el target actual. Llisteu els processos i els serveis.
+
+	# Verificar el target actual
+	systemctl get-default
+	runlevel
+
+	# Listar procesos y servicios
+	ps
+	systemctl list-unit-files --type="service" --all
+
+
+2. Configurar el sistema establint default.target a mode multi-user.target.
+
+	systemctl get-default
+
+	# Cambiamos defaul.target
+	systemctl set-default multi-user.target
+
+	## Cambio manualmente
+	ln -s /usr/lib/system/multi-user.target /etc/systemd/system/default.target
+
+
+3. Manualment canviar a graphical.target amb isolate.
+
+	systemctl get-default
+
+	# Cambiamos manualmente con isolate a graphical.target
+	systemctl isolate graphical.target
+
+
+4. Reiniciar el sistema i al grub etablir l’opció de iniciar en mode emergency.target.
+
+	En el GRUB al final de la linea del kernel indicar:
+
+	kernel..... systemd.unit=emergency.target
+
+	# ¿init=/bin/bash?
+	No confundir emergency.target con la opcion init=/bin/bash rw, el emergency.target
+	simplement engega systemd mientras que init=/bin/bash, el kernel ya no enciende
+	primero systemd si no que en su lugar es /bin/bash
+
+
+
+5. Reiniciar i indicar al grub l’opció del kernel per iniciar a rescue.target.
+
+        En el GRUB al final de la linea del kernel indicar:
+
+        # numero de runlevel
+        	kernel..... 1
+        # systemd.unit=nom.target
+        	kernel..... systemd.unit=rescue.target
+        Son dos de las opciones para iniciar en un target diferente
+
+
+
+
+
+
+6. Canviar de target amb l’ordre isolate activant multi-user.target.
+
+	systemctl isolate multi-user.target
+
+
+
+
+
+
+7. Restablit per defecte graphical.target i reiniciar el sistema.
+
+	systemctl set-default graphical.target
+
+	reboot
+
+
+
+
+8. Amb isolate indicar que es vol accedir al target poweroff.target.
+
+	systemctl isolate poweroff.target
+
+
+
+
+9. Iniciar el sistema en mode emergency.target. Llistar els processos, l’arbre de processos,
+   els units i les dependencies. Cal indicar el password de root? Hi ha multiples sessions de consola?
+	# En el grub
+	kernel.... systemd.unit=emergency.target
+
+	# Listar procesos y arbol de procesos
+	ps ax
+	pstree
+
+	# Listar units
+	systemctl list-unit-files
+
+	# Dependencias
+	systemctl list-dependencies
+
+
+
+10. Iniciar el sistema en mode init=/bin/bash. Llistar els processos, l’arbre de processos, 
+    els units i les dependencies. Cal indicar el password de root? Hi ha multiples sessions de consola?
+
+	# En el GRUB
+	kernel.... init=/bin/bash
+
+	# Listar procesos
+	pd ax
+
+	# Listar units
+	systemctl list-units
+
+	# Listar dependencias
+	systemctl list-dependencies	
+
+
+
+## Gestió bàsica de serveis ##
+
+11. Instal-leu els serveis httpd, gpm, xinetd i ssh.
+
+	dnf install httpd
+	""	""  gpm
+	(...)
+
+
+
+
+
+
+12. Activeu els serveis httpd i ssh i configureu-los disabled. Verifiqueu que estan actius.
+    Reiniciar el sistema i observar que no estan Iniciar el sistema.
+
+	# Activar servicio httpd
+	systemctl start httpd
+	# Deshabilitar servicio httpd
+	systemctl disable httpd
+	# Verificar que el servicio httpd este inhabilitado
+	systemctl is-enabled httpd
+
+
+
+13. Amb els serveis inactius condfigurar-los (httpd i sshd) com a enabled.
+    Verificar que estan enables però inactius.
+    Reiniciar el sistema i observar que estan actius i enabled.
+
+	# Desactivarlos
+	systemctl stop httpd
+
+	# Habilitarlos
+	systemctl enable httpd
+
+	# Verificar que este inactivo y habilitado
+	systemctl is-active httpd
+	systemctl is-enabled httpd
+
+
+
+14. Fer mask del servei httpd i observar que no es pot fer enable. Fer unmask.
+
+	systemctl mask httpd
+	# No se puede activas si esta desactivado y tampoco se puede hacer
+	# enable pues aparecera que esta masked
+	
+	# Si aplicamos mask mientras el unit esta activado, en el proximo
+	# arranque no encendera porque esta masked
+
+
+
+## Serveis i Units ##
+
+15. Identificar el fitxer .service del servei xinetd. Identificar l’executable.
+
+	locate xinetd
+		/usr/lib/.../xinetd.service
+
+	# Dentro del file.service localizamos el ejecutbale
+	# El ejecutable se indica en la linea ExcecStart
+	/user/sbin/xinetd
+
+
+
+16. Configurar manualment amb symlinks el enable del servei xinetd i verificar-ho.
+
+	# Lo hare de gpm
+	# Crearemos un symlink en /etc/systemd/system/nom.target.wants/NOM.service que apunte a
+	# /usr/lib/systemd/system/NOM.service
+	ln -s /usr/lib/systemd/system/gpm.service /etc/systemd/system/multi-user.target.wants/gpm.service
+
+
+
+17. Eliminar el enable del servei xinetd manualment amb el symlink. Verificar-ho.
+
+	# Eliminamos el simlink que apunta a /usr/lib/systemd/system/nom.service
+	rm /etc/systemd/system/multi-user.target.wants/gpm.service
+
+
+
+## Arquitectura de systemd ##
+
+18. Instal·la el paquet xinetd. Llista els seus components.
+
+	dnf install xinetd
+
+
+
+
+19. Identifica el fitxer de servei de xinetd i llista’l. Identifica l’executable del servei i a quin target s’instal·la.
+
+	locate xinetd
+
+	# Ejecutable en la linea ExecStart
+	# Target --> en la linea WantedBy
+
+
+
+20. Llista el directori on hi ha els fitxers de les units de servei de multi-user.target.
+Identifica el fitxer corresponent al servei xientd.
+
+	ls /etc/systemd/system/multi-user.target.wants
+
+	# xinetd.service
+
+
+
+
+21. Fes enable del servei xinetd. S’ha creat un link. Llista el directori origen i el directori
+destí del link. On s’ha creat el link? Perquè?
+
+	systemctl enable xinetd
+
+	# directorio origen
+	ls /etc/systemd/system/multi-user.target.wants/ (xinetd.service)
+
+	# Directorio de destino
+	ls /usr/lib/systemd/system/ (xinetd.service)
+
+	# El link se ha creado en /etc/.../multi.user.target.wants, ya que asi lo especifica
+	# el file .service de xinetd
+
+
+
+
+
+22. Llista les dependències de multi-user.target: totes; només els targets; només els
+serveis.
+
+	# Todas
+	systemctl list-dependencies multi-user.target --all
+
+	# Solo targets
+	systemctl list-dependencies multi-user.target | grep ".target"
+
+	# Solo servicios
+	systemctl list-dependencies multi-user.target | grep ".service"
+
+
+
+
+
+23. Llista les dependències de xinetd.service.
+
+	systemctl list-dependencies xinetd.service
+
+
+
+
+24. Fes l’ordre systemctl show del servei xinetd i identifica els elements: After i
+WantedBy.
+
+	systemctl show xinetd
+
+	# podemos buscarlo o hacer un grep After
+	After=systemd-journald.socket system.slice sysinit.target network.target basic.target syslog.target
+
+	# Podemos buscarlo o hacer un grep WantedBY
+	WantedBy=multi-user.target
+
+
+
+25. Es pot iniciar sessió en el sysinit.target? Explica el perquè documentant-ho.
+
+	NO, el sysinit.target es un target intermedio y en su file.target en la linea
+	de AllowIsolate tiene asignado no (AllowIsolate=no) o directamente no tiene esa
+	linea, esto quiere decir que es	un target necesario para iniciar otros target
+	pero que no se puede hacer un arranque del sistema con ese target.
+
+
+
+
+## Arrancada de targets deiferents ##
+
+26. Mostra les dependències de recue.target: totes; targets; serveis.
+
+	systemctl list-dependencies rescue.target
+
+
+27. Mostra les dependències de emergency.target: totes; targets; serveis.
+
+	systemctl list-dependencies emergency.target
+
+
+
+28. Estableix com a target per defecte reboot.target i reinicia la màquina.
+
+	systemctl set-default reboot.target
+
+	reboot
+
+29. Punyeta! Arregla-ho!
+
+	# Desde el GRUB editamos la linea kernel
+	kernel..... systemd.unit=rescue.target
+
+	# Una vez arrancado el sistema en modo rescue
+	# # Nos pedira la passwd de root
+	# # Cambiamos el default.target
+	systemctl set-default multi-user.target
+
+
+
+
